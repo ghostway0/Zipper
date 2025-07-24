@@ -1,0 +1,2 @@
+Config that has filters: I.e. it's this and that protections, but if EIP == that, it's those protections.
+We take the most conservative protections and handle accesses when faulting.
