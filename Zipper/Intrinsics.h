@@ -1,3 +1,6 @@
+#ifndef ZIPPER_INTRINSICS_H_
+#define ZIPPER_INTRINSICS_H_
+
 template<typename T>
 inline T AtomicLoad(const T* Ptr, int MemOrder = __ATOMIC_SEQ_CST) {
     T Val;
@@ -20,3 +23,5 @@ inline T AtomicFetchXchg(T* Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
 inline void Pause() {
     _mm_pause();
 }
+
+#endif // ZIPPER_INTRINSICS_H_

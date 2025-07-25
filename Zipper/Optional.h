@@ -1,5 +1,9 @@
-#include "Utils.h"
+#ifndef ZIPPER_OPTIONAL_H_
+#define ZIPPER_OPTIONAL_H_
+
 #include <new>
+
+#include "Utils.h"
 
 template<typename T>
 class Optional {
@@ -48,3 +52,5 @@ private:
     alignas(T) UINT8 m_Storage[sizeof(T)];
     bool m_HasValue;
 };
+
+#endif // ZIPPER_OPTIONAL_H_

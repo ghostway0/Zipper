@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ZIPPER_UTILS_H_
+#define ZIPPER_UTILS_H_
 
 #include <ntddk.h>
 #define ZIPPER_ASSERT(x)                                  \
@@ -9,3 +10,5 @@
             DbgBreakPoint();                              \
         }                                                 \
     } while (0)
+
+#endif // ZIPPER_UTILS_H_

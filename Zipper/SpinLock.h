@@ -1,3 +1,6 @@
+#ifndef ZIPPER_SPINLOCK_H_
+#define ZIPPER_SPINLOCK_H_
+
 #include "Intrinsics.h"
 
 class SpinLock {
@@ -28,3 +31,5 @@ public:
 private:
     UINT64 m_Flag;
 };
+
+#endif // ZIPPER_SPINLOCK_H_
