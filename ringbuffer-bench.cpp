@@ -19,7 +19,7 @@
 #include "Zipper/Optional.h"
 #include "Zipper/Intrinsics.h"
 
-#define alignas(x)
+// #define alignas(x)
 
 template<typename T>
 class MPSCRingBuffer {
@@ -49,15 +49,15 @@ public:
         //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
         // 2. faster than (3) for some reason??
-        // UINT64 Tmp = Tail;
-        // while (!AtomicCompareExchangeWeak(&m_Tail, &Tmp, Tail + 1,
-        //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
-        //     Tmp = Tail;
-        // }
+        UINT64 Tmp = Tail;
+        while (!AtomicCompareExchangeWeak(&m_Tail, &Tmp, Tail + 1,
+                    __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+            Tmp = Tail;
+        }
 
-        // 3. ACQ_REL is faster here than ACQ
-        while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQ_REL) != Tail);
-        AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
+        // 3. ACQ_REL is faster here than ACQ. 3x slower, slower when aligned to cache line?
+        // while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE) != Tail);
+        // AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
         return true;
     }
 

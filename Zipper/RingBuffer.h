@@ -28,7 +28,7 @@ public:
 
         m_Buffer[(Tail - 1) % m_Size] = Item;
 
-        while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE) != Tail);
+        while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQ_REL) != Tail);
         AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
         return true;
     }
