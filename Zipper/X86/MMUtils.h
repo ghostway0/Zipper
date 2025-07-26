@@ -1,3 +1,9 @@
+#ifndef ZIPPER_X86_MMUTILS_H_
+#define ZIPPER_X86_MMUTILS_H_
+
+#define PAGE_SIZE (UINT64)4096
+#define PAGE_SHIFT (UINT64)12
+
 enum Prot {
     PROT_READ = 1 << 0,
     PROT_WRITE = 1 << 1,
@@ -20,8 +26,8 @@ enum CachePolicy : UINT8 {
     CACHE_WB,
 };
 
-void *AllocateLockedPages(UINT64 Size, ULONG ProtectFlags = PROT_RW) {
-    void* Ptr = ExAllocatePoolWithTag(NonPagedPoolNx, Size, "Zipper");
+PVOID AllocateLockedPages(UINT64 Size, ULONG ProtectFlags = PROT_RW) {
+    PVOID Ptr = ExAllocatePoolWithTag(NonPagedPoolNx, Size, "Zipper");
     if (!Ptr) {
         return nullptr;
     }
@@ -39,18 +45,20 @@ void *AllocateLockedPages(UINT64 Size, ULONG ProtectFlags = PROT_RW) {
     return Ptr;
 }
 
-void *AllocateContiguousPageAligned(UINT64 Size) {
+PVOID AllocateContiguousPageAligned(UINT64 Size) {
     PHYSICAL_ADDRESS HighestAcceptable;
     HighestAcceptable.QuadPart = MAXULONG64;
 
-    void *Allocated = MmAllocateContiguousMemory(Size, HighestAcceptable);
+    PVOID Allocated = MmAllocateContiguousMemory(Size, HighestAcceptable);
     ZIPPER_ASSERT(Allocated);
 
     return Allocated;
 }
 
-static inline void FreeContiguous(void *ptr) {
+static inline void FreeContiguous(PVOID ptr) {
     if (ptr) {
         MmFreeContiguousMemory(ptr);
     }
 }
+
+#endif // ZIPPER_X86_MMUTILS_H_

@@ -25,7 +25,7 @@ public:
     void Initialize();
 
     void MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
-            DWORD Prot, CachePolicy Type = CACHE_WB);
+            DWORD Prot, CachePolicy Policy = CACHE_WB);
 
 private:
     NPTE *m_TopLevel;
