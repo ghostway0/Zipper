@@ -26,7 +26,7 @@ public:
         } while (!AtomicCompareExchangeWeak<UINT64>(&m_TailReserved, &Tail, Tail + 1,
                     __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
-        m_Buffer[(Tail - 1) % m_Size] = Item;
+        m_Buffer[Tail % m_Size] = Item;
 
         while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQ_REL) != Tail);
         AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);

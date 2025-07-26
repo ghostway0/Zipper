@@ -42,8 +42,8 @@ public:
         } while (!AtomicCompareExchangeWeak<UINT64>(&m_TailReserved, &Tail, Tail + 1,
                     __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
-        m_Buffer[(Tail - 1) % m_Size] = Item;
-        
+        m_Buffer[Tail % m_Size] = Item;
+
         // 1. fastest but incorrect
         // while (!AtomicCompareExchangeWeak(&m_Tail, &Tail, Tail + 1,
         //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
@@ -110,9 +110,9 @@ private:
     UINT64 m_Size;
 };
 
-constexpr size_t ITEMS_PER_PRODUCER = 1000000;
-constexpr int NUM_PRODUCERS = 4;
-constexpr size_t RING_SIZE = 4096;
+constexpr size_t ITEMS_PER_PRODUCER = 5000000;
+constexpr int NUM_PRODUCERS = 5;
+constexpr size_t RING_SIZE = 8192;
 
 MPSCRingBuffer<int> rb(RING_SIZE);
 std::atomic<int> consumed_count{0};
