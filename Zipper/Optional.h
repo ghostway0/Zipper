@@ -3,7 +3,7 @@
 
 #include <new>
 
-// #include "Utils.h"
+#include "Utils.h"
 
 template<typename T>
 class Optional {
@@ -29,12 +29,12 @@ public:
     }
 
     const T &Get() {
-        // ZIPPER_ASSERT(HasValue());
+        ZIPPER_ASSERT(HasValue());
         return *reinterpret_cast<const T*>(&m_Storage);
     }
 
     const T &Get() const {
-        // ZIPPER_ASSERT(HasValue());
+        ZIPPER_ASSERT(HasValue());
         return *reinterpret_cast<const T*>(&m_Storage);
     }
 
