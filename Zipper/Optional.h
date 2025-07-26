@@ -3,33 +3,38 @@
 
 #include <new>
 
-#include "Utils.h"
+// #include "Utils.h"
 
 template<typename T>
 class Optional {
+public:
     Optional() : m_HasValue(false) {}
 
-    explicit Optional(T &&Value) : m_HasValue(true) {
+    Optional(T &&Value) : m_HasValue(true) {
         new (&m_Storage) T(std::move(Value));
     }
+    
+    Optional(T &Value) : m_HasValue(true) {
+        new (&m_Storage) T(Value);
+    }
 
-    Optional(const Optional& Other) : m_HasValue(Other.m_HasValue) {
+    Optional(const Optional &Other) : m_HasValue(Other.m_HasValue) {
         if (Other.m_HasValue) {
             new (&m_Storage) T(Other.Get());
         }
     }
 
-    constexpr static Optional<T> Null() {
+    constexpr static Optional Null() {
         return Optional<T>();
     }
 
     const T &Get() {
-        ZIPPER_ASSERT(HasValue());
+        // ZIPPER_ASSERT(HasValue());
         return *reinterpret_cast<const T*>(&m_Storage);
     }
 
     const T &Get() const {
-        ZIPPER_ASSERT(HasValue());
+        // ZIPPER_ASSERT(HasValue());
         return *reinterpret_cast<const T*>(&m_Storage);
     }
 

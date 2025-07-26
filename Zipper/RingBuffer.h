@@ -9,7 +9,7 @@ template<typename T>
 class MPSCRingBuffer {
 public:
     MPSCRingBuffer(UINT64 Size) : m_Size(Size) {
-        m_Buffer = AllocateVirtual((Size * sizeof(T) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1));
+        m_Buffer = (T *)AllocateVirtual((Size * sizeof(T) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1));
     }
 
     ~MPSCRingBuffer() {
@@ -23,14 +23,13 @@ public:
             if (Tail - Head >= m_Size) {
                 return false;
             }
-        } while (AtomicExchangeWeak<UINT64>(&m_TailReserved, &Tail, Tail + 1,
+        } while (!AtomicCompareExchangeWeak<UINT64>(&m_TailReserved, &Tail, Tail + 1,
                     __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
-        m_Buffer[Tail % m_Size] = Item;
+        m_Buffer[(Tail - 1) % m_Size] = Item;
 
-        while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE) != Tail);
-        AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
-
+        while (!AtomicCompareExchangeWeak(&m_Tail, &Tail, Tail + 1,
+                    __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
         return true;
     }
 

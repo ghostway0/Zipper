@@ -9,6 +9,11 @@ inline T AtomicLoad(const T *Ptr, int MemOrder = __ATOMIC_SEQ_CST) {
 }
 
 template<typename T>
+inline void AtomicStore(T *Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
+    __atomic_store(Ptr, &Value, MemOrder);
+}
+
+template<typename T>
 inline T AtomicFetchAdd(T *Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
     return __atomic_fetch_add(Ptr, Value, MemOrder);
 }
@@ -21,27 +26,22 @@ inline T AtomicFetchXchg(T *Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
 }
 
 template<typename T>
-inline bool AtomicExchangeWeak(T *Ptr, T *Expected, T Desired,
+inline bool AtomicCompareExchangeWeak(T *Ptr, T *Expected, T Desired,
         int SuccsMemOrder, int FailMemOrder) {
     return __atomic_compare_exchange_n(Ptr, Expected, Desired, /*weak=*/true,
             SuccsMemOrder, FailMemOrder);
 }
 
-inline void Pause() {
-    _mm_pause();
-}
-
+// inline void Pause() {
+//     _mm_pause();
+// }
 
 inline void InterruptContinue() {
-    __asm {
-        STI
-    }
+    asm volatile ("sti");
 }
 
 inline void InterruptStop() {
-    __asm {
-        CLI
-    }
+    asm volatile ("cli");
 }
 
 #endif // ZIPPER_INTRINSICS_H_
