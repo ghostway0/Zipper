@@ -1,5 +1,3 @@
-#include "Types.h"
-
 #include "Optional.h"
 
 #define PAGE_SIZE (UINT64_T)4096
@@ -55,7 +53,7 @@ public:
     }
 
 private:
-    T* m_Buffer;
+    T *m_Buffer;
     UINT64 m_Tail;
     UINT64 m_Head;
     UINT64 m_Size;

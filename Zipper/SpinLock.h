@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    UINT64 m_Flag;
+    UINT64 m_Flag{0};
 };
 
 #endif // ZIPPER_SPINLOCK_H_

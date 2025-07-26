@@ -1,0 +1,21 @@
+PUBLIC VMXIsAvailable
+
+VMXIsAvailable PROC
+    MOV EAX, 1
+    CPUID
+    BT ECX, 5
+    SETC AL
+    MOVZX EAX, AL
+    RET
+ENDP
+
+PUBLIC EnableVMX
+
+EnableVMX PROC
+    PUSH RAX
+    MOV RAX, CR4
+    OR RAX, 02000h
+    MOV CR4, RAX
+    POP RAX
+    RET
+ENDP

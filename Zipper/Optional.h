@@ -13,9 +13,9 @@ class Optional {
         new (&m_Storage) T(std::move(Value));
     }
 
-    Optional(const Optional& other) : m_HasValue(other.m_HasValue) {
-        if (other.m_HasValue) {
-            new (&m_Storage) T(other.Get());
+    Optional(const Optional& Other) : m_HasValue(Other.m_HasValue) {
+        if (Other.m_HasValue) {
+            new (&m_Storage) T(Other.Get());
         }
     }
 

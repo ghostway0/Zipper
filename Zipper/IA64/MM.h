@@ -83,12 +83,35 @@ struct PTE {
 
 class EPT {
 public:
+    EPT();
+
+    void Initialize();
+
     void MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
             DWORD Prot, MemoryType Type = MEM_WB);
 
 private:
     PML4E *m_TopLevel;
-    UINT8 m_PageTableLevel;
+    UINT8 m_PageTableLevel{4};
 };
+
+struct EPTP {
+    UINT64 MemoryType : 3;
+    UINT64 PageWalkLength : 3;
+    UINT64 EnableAccessAndDirtyFlags : 1;
+    UINT64 Reserved1 : 5;
+    UINT64 PageFrameNumber : 36;
+    UINT64 Reserved2 : 16;
+};
+
+struct MTRRDefType {
+    UINT64 MemoryType : 3;
+    UINT64 Reserved1 : 7;
+    UINT64 FixedRangeMTRREnable : 1;
+    UINT64 MTRREnable : 1;
+    UINT64 Reserved2 : 52;
+} __PACKED;
+
+void ReadMTRR(UINT64 Address);
 
 #endif // ZIPPER_IA64_MM_H_

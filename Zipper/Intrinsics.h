@@ -24,4 +24,17 @@ inline void Pause() {
     _mm_pause();
 }
 
+
+inline void InterruptContinue() {
+    __asm {
+        STI
+    }
+}
+
+inline void InterruptStop() {
+    __asm {
+        CLI
+    }
+}
+
 #endif // ZIPPER_INTRINSICS_H_

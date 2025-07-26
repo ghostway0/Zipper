@@ -1,4 +1,28 @@
 #include "MM.h"
+#include "INtrinsics.h"
+
+EPT::EPT() {
+    Initialize();
+}
+
+void EPT::Initialize() {
+    PHYSICAL_ADDRESS HighestAddr;
+    HighestAddr.QuadPart = ~0ull;
+    UINT64 Allocated = MmAllocateContiguousMemory(PAGE_SIZE, HighestAddr);
+    ZIPPER_ASSERT(Allocated && AlignedTo(Allocated, PAGE_SIZE));
+
+    RtlZeroMemory(Allocated, PAGE_SIZE);
+
+
+    EPTP EptPointer{
+        .MemoryType = MEM_WB,
+        .PageWalkLength = m_PageTableLevel - 1,
+        .EnableAccessAndDirtyFlags = 1,
+        .TopLevelPfn = Allocated >> 12,
+    };
+
+    __vmx_vmwrite(VMX_EPT_POINTER, *(UINT64 *)&EptPointer);
+}
 
 bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
         DWORD Prot, MemoryType Type = MEM_WB) {
@@ -7,6 +31,8 @@ bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
         !AlignedTo(PAGE_SIZE, PhysTo)) {
         return false;
     }
+
+    InterruptStop(); // lol this is _probably_ needed
 
     auto WalkPage = [](auto *Entry) -> UINT64 {
         if (!Entry->PhysicalAddress) {
@@ -48,6 +74,8 @@ bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
         PageEntry->Accessed = 1;
         PageEntry->Dirty = 1;
     }
+    
+    InterruptContinue();
 
     return true;
 }
