@@ -34,7 +34,7 @@ bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
     InterruptStop(); // lol this is _probably_ needed
 
     auto WalkPage = [](auto *Entry) -> UINT64 {
-        if (!Entry->PhysicalAddress) {
+        if (!Entry->PhysicalAddressPFN) {
             PHYSICAL_ADDRESS HighestAddr;
             HighestAddr.QuadPart = ~0ull;
 
@@ -42,13 +42,13 @@ bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
             ZIPPER_ASSERT(Allocated);
 
             RtlZeroMemory(Allocated, PAGE_SIZE);
-            Entry->PhysicalAddress = GetPhysicalAddress(Allocated) >> 12;
+            Entry->PhysicalAddressPFN = GetPhysicalAddress(Allocated) >> 12;
             Entry->Read = 1;
             Entry->Write = 1;
             Entry->Execute = 1;
         }
 
-        return Entry->PhysicalAddress << 12;
+        return Entry->PhysicalAddressPFN << 12;
     };
 
     UINT64 CurrentVirt = VirtFrom;
@@ -65,7 +65,7 @@ bool EPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
         PTE *PT = (PTE *)WalkPage(PD + PDI);
         PTE *PageEntry = PT + PTI;
 
-        PageEntry->PhysicalAddress = CurrentPhys >> 12;
+        PageEntry->PhysicalAddressPFN = CurrentPhys >> 12;
         PageEntry->Execute = (Prot & PROT_EXEC) != 0;
         PageEntry->Write = (Prot & PROT_WRITE) != 0;
         PageEntry->Read = (Prot & PROT_READ) != 0;

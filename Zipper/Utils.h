@@ -2,13 +2,23 @@
 #define ZIPPER_UTILS_H_
 
 #include <ntddk.h>
-#define ZIPPER_ASSERT(x)                                  \
+#define ZIPPER_ASSERT(X)                                  \
     do {                                                  \
-        if (!(x)) {                                       \
+        if (!(X)) {                                       \
             DbgPrint("ZIPPER_ASSERT failed: %s (%s:%d)\n",\
-                     #x, __FILE__, __LINE__);             \
+                     #X, __FILE__, __LINE__);             \
             DbgBreakPoint();                              \
         }                                                 \
     } while (0)
+
+#define ZIPPER_UNREACHABLE(M)                                       \
+    do {                                                            \
+        if (!(M)) {                                                 \
+            DbgPrint("ZIPPER_UNREACHABLE was reached: %s (%s:%d)\n",\
+                     #M, __FILE__, __LINE__);                       \
+            DbgBreakPoint();                                        \
+        }                                                           \
+    } while (0)
+
 
 #endif // ZIPPER_UTILS_H_
