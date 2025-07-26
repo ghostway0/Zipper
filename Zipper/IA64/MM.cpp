@@ -9,10 +9,9 @@ void EPT::Initialize() {
     PHYSICAL_ADDRESS HighestAddr;
     HighestAddr.QuadPart = ~0ull;
     UINT64 Allocated = MmAllocateContiguousMemory(PAGE_SIZE, HighestAddr);
-    ZIPPER_ASSERT(Allocated && AlignedTo(Allocated, PAGE_SIZE));
+    ZIPPER_ASSERT(Allocated && AlignedTo(PAGE_SIZE, Allocated));
 
     RtlZeroMemory(Allocated, PAGE_SIZE);
-
 
     EPTP EptPointer{
         .MemoryType = MEM_WB,
