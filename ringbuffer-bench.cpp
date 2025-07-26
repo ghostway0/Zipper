@@ -49,11 +49,20 @@ public:
         //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
         // 2. faster than (3) for some reason??
-        UINT64 Tmp = Tail;
-        while (!AtomicCompareExchangeWeak(&m_Tail, &Tmp, Tail + 1,
-                    __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
-            Tmp = Tail;
+        // UINT64 Tmp = Tail;
+        // while (!AtomicCompareExchangeWeak(&m_Tail, &Tmp, Tail + 1,
+        //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+        //     Tmp = Tail;
+        // }
+        for (UINT64 Current = Tail; !AtomicCompareExchangeWeak<UINT64>(&m_Tail, &Current,
+                    Tail + 1, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE); Current = Tail) {
+            __asm__ __volatile__ ("yield");
         }
+        // UINT64 CurrentTail = Tail;
+        // while (!AtomicCompareExchangeWeak<UINT64>(&m_Tail, &CurrentTail, Tail + 1,
+        //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+        //     CurrentTail = AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE);
+        // }
 
         // 3. ACQ_REL is faster here than ACQ. 3x slower, slower when aligned to cache line?
         // while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE) != Tail);
@@ -102,7 +111,7 @@ private:
 };
 
 constexpr size_t ITEMS_PER_PRODUCER = 1000000;
-constexpr int NUM_PRODUCERS = 8;
+constexpr int NUM_PRODUCERS = 4;
 constexpr size_t RING_SIZE = 4096;
 
 MPSCRingBuffer<int> rb(RING_SIZE);
