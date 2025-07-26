@@ -43,12 +43,21 @@ public:
                     __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
         m_Buffer[(Tail - 1) % m_Size] = Item;
+        
+        // 1. fastest but incorrect
+        // while (!AtomicCompareExchangeWeak(&m_Tail, &Tail, Tail + 1,
+        //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
-        while (!AtomicCompareExchangeWeak(&m_Tail, &Tail, Tail + 1,
-                    __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
+        // 2. faster than (3) for some reason??
+        // UINT64 Tmp = Tail;
+        // while (!AtomicCompareExchangeWeak(&m_Tail, &Tmp, Tail + 1,
+        //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+        //     Tmp = Tail;
+        // }
 
-        // while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE) != Tail);
-        // AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
+        // 3. ACQ_REL is faster here than ACQ
+        while (AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQ_REL) != Tail);
+        AtomicStore<UINT64>(&m_Tail, Tail + 1, __ATOMIC_RELEASE);
         return true;
     }
 
