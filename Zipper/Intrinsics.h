@@ -26,15 +26,28 @@ inline T AtomicFetchXchg(T *Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
 }
 
 template<typename T>
+inline T AtomicFetchOr(T *Ptr, T Value, int MemOrder = __ATOMIC_SEQ_CST) {
+    __sync_fetch_and_or(Ptr, Value, MemOrder);
+}
+
+inline void MemoryFence(int MemOrder = __ATOMIC_SEQ_CST) {
+    __atomic_thread_fence(MemOrder);
+}
+
+template<typename T>
 inline bool AtomicCompareExchangeWeak(T *Ptr, T *Expected, T Desired,
         int SuccsMemOrder, int FailMemOrder) {
     return __atomic_compare_exchange_n(Ptr, Expected, Desired, /*weak=*/true,
             SuccsMemOrder, FailMemOrder);
 }
 
-// inline void Pause() {
-//     _mm_pause();
-// }
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+#include <immintrin.h> // or <xmmintrin.h> for older compatibility
+
+inline void Pause() {
+    _mm_pause();
+}
+#endif
 
 inline void InterruptContinue() {
     asm volatile ("sti");

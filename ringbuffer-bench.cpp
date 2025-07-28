@@ -19,21 +19,23 @@
 #include "Zipper/Optional.h"
 #include "Zipper/Intrinsics.h"
 
-// #define alignas(x)
+#define alignas(x)
 
 template<typename T>
 class MPSCRingBuffer {
 public:
     MPSCRingBuffer(UINT64 Size) : m_Size(Size) {
         m_Buffer = (T*)malloc((Size * sizeof(T) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1));
+        m_Committed = (UINT64*)calloc(Size, sizeof(UINT64));
     }
 
     ~MPSCRingBuffer() {
         free(m_Buffer);
+        free(m_Committed);
     }
 
     bool Add(T Item) {
-        UINT64 Tail = AtomicLoad<UINT64>(&m_TailReserved, __ATOMIC_ACQ_REL);
+        UINT64 Tail = AtomicLoad<UINT64>(&m_TailReserved, __ATOMIC_ACQUIRE);
         do {
             UINT64 Head = AtomicLoad<UINT64>(&m_Head, __ATOMIC_ACQUIRE);
             if (Tail - Head >= m_Size) {
@@ -42,7 +44,18 @@ public:
         } while (!AtomicCompareExchangeWeak<UINT64>(&m_TailReserved, &Tail, Tail + 1,
                     __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
-        m_Buffer[Tail % m_Size] = Item;
+        UINT64 Idx = Tail % m_Size;
+        m_Buffer[Idx] = Item;
+
+        // MemoryFence(__ATOMIC_RELEASE);
+
+        // We can't overrun Head - we checked that earlier. Just add 1.
+        AtomicFetchAdd(m_Committed + Idx, (UINT64)1, __ATOMIC_ACQ_REL);
+
+        // UINT64 SeqNumber = AtomicLoad(m_Committed + Idx, __ATOMIC_ACQUIRE);
+        // while (SeqNumber % 2 == 0 &&
+        //        !AtomicCompareExchangeWeak(m_Committed + Idx, &SeqNumber, SeqNumber + 1,
+        //                                   __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE));
 
         // 1. fastest but incorrect
         // while (!AtomicCompareExchangeWeak(&m_Tail, &Tail, Tail + 1,
@@ -54,10 +67,11 @@ public:
         //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
         //     Tmp = Tail;
         // }
-        for (UINT64 Current = Tail; !AtomicCompareExchangeWeak<UINT64>(&m_Tail, &Current,
-                    Tail + 1, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE); Current = Tail) {
-            __asm__ __volatile__ ("yield");
-        }
+        // for (UINT64 Current = Tail; !AtomicCompareExchangeWeak<UINT64>(&m_Tail, &Current,
+        //             Tail + 1, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE); Current = Tail) {
+        //     Pause();
+        //     // __asm__ __volatile__ ("yield");
+        // }
         // UINT64 CurrentTail = Tail;
         // while (!AtomicCompareExchangeWeak<UINT64>(&m_Tail, &CurrentTail, Tail + 1,
         //             __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
@@ -71,15 +85,26 @@ public:
     }
 
     Optional<T> GetNoWait() {
-        UINT64 Head = AtomicLoad<UINT64>(&m_Head, __ATOMIC_ACQ_REL);
-        UINT64 Tail = AtomicLoad<UINT64>(&m_Tail, __ATOMIC_ACQUIRE);
+        UINT64 Head = AtomicLoad(&m_Head, __ATOMIC_ACQUIRE);
+        UINT64 Idx = Head % m_Size;
 
-        if (Head == Tail) {
+        UINT64 HeadSeq = AtomicLoad(m_Committed + Idx, __ATOMIC_ACQUIRE);
+        UINT64 ExpectedSeq = m_SeqNumber * 2 + 1;
+
+        // std::cout << ExpectedSeq << " "<< HeadSeq << " " << Head << "\n";
+        if (HeadSeq != ExpectedSeq) {
             return Optional<T>::Null();
         }
 
-        T Value = m_Buffer[Head % m_Size];
-        AtomicFetchAdd<UINT64>(&m_Head, 1, __ATOMIC_RELEASE);
+        T Value = m_Buffer[Idx];
+
+        if (Idx == m_Size - 1) {
+            AtomicFetchAdd(&m_SeqNumber, (UINT64)1, __ATOMIC_ACQ_REL);
+        }
+
+        AtomicFetchAdd(m_Committed + Idx, (UINT64)1, __ATOMIC_RELEASE);
+        AtomicFetchAdd(&m_Head, (UINT64)1, __ATOMIC_RELEASE);
+
         return Value;
     }
 
@@ -104,15 +129,17 @@ public:
 
 private:
     T *m_Buffer;
+    UINT64 *m_Committed;
+    alignas(64) UINT64 m_SeqNumber{0};
     alignas(64) UINT64 m_TailReserved{0};
-    alignas(64) UINT64 m_Tail{0};
+    // alignas(64) UINT64 m_Tail{0};
     alignas(64) UINT64 m_Head{0};
     UINT64 m_Size;
 };
 
-constexpr size_t ITEMS_PER_PRODUCER = 5000000;
+constexpr size_t ITEMS_PER_PRODUCER = 400000;
 constexpr int NUM_PRODUCERS = 5;
-constexpr size_t RING_SIZE = 8192;
+constexpr size_t RING_SIZE = 4096;
 
 MPSCRingBuffer<int> rb(RING_SIZE);
 std::atomic<int> consumed_count{0};
