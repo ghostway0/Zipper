@@ -69,7 +69,6 @@ bool NPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
         PageEntry->User     = 1;
         PageEntry->Accessed = 1;
         PageEntry->Dirty    = 1;
-
         PageEntry->PWT      = (Policy == CACHE_WC || Policy == CACHE_UC) ? 1 : 0;
         PageEntry->PCD      = (Policy == CACHE_UC) ? 1 : 0;
         PageEntry->PAT      = 0;

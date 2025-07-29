@@ -32,16 +32,20 @@ inline bool AtomicCompareExchangeWeak(T *Ptr, T *Expected, T Desired,
             SuccsMemOrder, FailMemOrder);
 }
 
-// inline void Pause() {
-//     _mm_pause();
-// }
-
-inline void InterruptContinue() {
-    asm volatile ("sti");
+inline void MemoryFence(int MemOrder) {
+    __atomic_thread_fence(MemOrder);
 }
 
-inline void InterruptStop() {
-    asm volatile ("cli");
-}
+extern void Pause();
+
+extern void InterruptContinue();
+
+extern void InterruptStop();
+
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
+
+#include "X86/Intrinsics.h"
+
+#endif // __x86_64__
 
 #endif // ZIPPER_INTRINSICS_H_
