@@ -1,2 +1,0 @@
-PROtC GetVMExitReason
-ENDP

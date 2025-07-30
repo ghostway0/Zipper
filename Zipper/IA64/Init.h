@@ -1,4 +1,0 @@
-#ifndef ZIPPER_IA64_INIT_H_
-#define ZIPPER_IA64_INIT_H_
-
-#endif // ZIPPER_IA64_INIT_H_
