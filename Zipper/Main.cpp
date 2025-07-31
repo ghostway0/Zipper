@@ -1,5 +1,7 @@
 int DriverMain() {
-    Arch::Init();
+    // set up ioctls
 
-    Arch::VMState *State = Arch::GetVMStateForCpu();
+    // Arch::Init();
+    //
+    // Arch::VMState *State = Arch::GetVMStateForCpu();
 }

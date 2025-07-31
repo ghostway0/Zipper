@@ -121,7 +121,7 @@ struct RegisterState {
 struct CpuState {
     RegisterState Regs;
     VMExitReason ExitReason;
-    bool InterruptPending;
+    BOOL InterruptPending;
     DWORD LastExceptionVector;
 };
 

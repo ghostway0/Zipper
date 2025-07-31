@@ -1,6 +1,9 @@
 #ifndef ZIPPER_X86_AMD64_MM_H_
 #define ZIPPER_X86_AMD64_MM_H_
 
+#define PAGE_SIZE (UINT64)4096
+#define PAGE_SHIFT 12
+
 struct NPTE {
     UINT64 Present : 1;
     UINT64 Write : 1;
@@ -24,7 +27,9 @@ public:
 
     void Initialize();
 
-    void MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
+    UINT64 TopLevelPhysicalAddress();
+
+    BOOL MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
             DWORD Prot, CachePolicy Policy = CACHE_WB);
 
 private:

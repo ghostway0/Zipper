@@ -57,9 +57,9 @@ struct VMCB {
 } __PACKED;
 
 struct VMState {
-    CpuState Cpu;
+    VMCB *GuestControl;
+    VMCB *HostControl;
     NPT PageTable;
-    VMCB *Control;
 };
 
 #endif // ZIPPER_X86_AMD64_STATE_H_

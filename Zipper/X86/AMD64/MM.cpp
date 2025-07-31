@@ -14,17 +14,21 @@ void NPT::Initialize() {
 
     VMState *VMState = GetVMStateForCpu();
     VMState->Control.NPEnable = 1;
-    VMState->Control.HCr3 = Allocated >> PAGE_SHIFT;
+    VMState->Control.HostCr3 = Allocated >> PAGE_SHIFT;
 
-    Control.FlushInvalidation = 1;
+    VMState->Control.TLBControl = 1;
 }
 
-bool NPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
+UINT64 NPT::TopLevelPhysicalAddress() {
+    return GetPhysicalAddress(m_TopLevel);
+}
+
+BOOL NPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo, 
         DWORD Prot, CachePolicy Policy) {
     if (!AlignedTo(PAGE_SIZE, VirtFrom) ||
         !AlignedTo(PAGE_SIZE, VirtTo) ||
         !AlignedTo(PAGE_SIZE, PhysTo)) {
-        return false;
+        return FALSE;
     }
 
     InterruptStop();
@@ -75,5 +79,5 @@ bool NPT::MapInto(UINT64 VirtFrom, UINT64 VirtTo, UINT64 PhysTo,
     }
 
     InterruptContinue();
-    return true;
+    return TRUE;
 }

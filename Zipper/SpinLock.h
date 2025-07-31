@@ -9,9 +9,9 @@ public:
         while (!TryLock()) { Pause(); }
     }
     
-    bool LockTimeout(UINT64 MaxIter) {
+    BOOL LockTimeout(UINT64 MaxIter) {
         UINT64 Iter = 0;
-        bool Locked = false;
+        BOOL Locked = FALSE;
         while (!(Locked = TryLock()) && Iter < MaxIter) {
             Pause();
             ++Iter;
@@ -20,7 +20,7 @@ public:
         return Locked;
     }
 
-    bool TryLock() {
+    BOOL TryLock() {
         return AtomicFetchXchg(&m_Flag, 1, __ATOMIC_ACQUIRE) == 0;
     }
 

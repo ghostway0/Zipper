@@ -8,13 +8,13 @@
 template<typename T>
 class Optional {
 public:
-    Optional() : m_HasValue(false) {}
+    Optional() : m_HasValue(FALSE) {}
 
-    Optional(T &&Value) : m_HasValue(true) {
+    Optional(T &&Value) : m_HasValue(TRUE) {
         new (&m_Storage) T(std::move(Value));
     }
     
-    Optional(T &Value) : m_HasValue(true) {
+    Optional(T &Value) : m_HasValue(TRUE) {
         new (&m_Storage) T(Value);
     }
 
@@ -38,7 +38,7 @@ public:
         return *reinterpret_cast<const T*>(&m_Storage);
     }
 
-    bool HasValue() { return m_HasValue; }
+    BOOL HasValue() { return m_HasValue; }
 
     T ValueOr(const T &Fallback) const {
         return m_HasValue ? Get() : Fallback;
@@ -50,12 +50,12 @@ public:
         }
 
         reinterpret_cast<T*>(&m_Storage)->~T();
-        m_HasValue = false;
+        m_HasValue = FALSE;
     }
 
 private:
     alignas(T) UINT8 m_Storage[sizeof(T)];
-    bool m_HasValue;
+    BOOL m_HasValue;
 };
 
 #endif // ZIPPER_OPTIONAL_H_
