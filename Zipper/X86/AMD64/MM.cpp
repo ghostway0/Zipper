@@ -1,4 +1,5 @@
 #include "MM.h"
+#include "Intrinsics.h"
 
 #define NPT_LEVEL_SIZE PAGE_SIZE
 

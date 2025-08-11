@@ -1,6 +1,5 @@
 #ifndef ZIPPER_X86_AMD64_STATE_H_
 #define ZIPPER_X86_AMD64_STATE_H_
-#define ZIPPER_X86_AMD64_STATE_H_
 
 #include "MM.h"
 #include "X86State.h"

@@ -1,3 +1,4 @@
+#include <cstring>
 #define IOCTL_PROTECT_REGION CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_WRITE_DATA)
 #define IOCTL_LOCK_CONFIG CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_WRITE_DATA)
 
@@ -7,19 +8,12 @@ struct ProtectRequest {
     UINT64 Address;
     UINT64 Size;
     UINT32 Protections;
-    UINT8 Filter[FILTER_CODE_SIZE];
 };
 
 struct ProtectedRegion {
     UINT64 Start;
     UINT64 End;
-};
-
-struct ProtTable {
-    ProtectedRegion *Regions;
-    ULONG Count;
-    UCHAR *FiltersBlob;
-    ULONG FiltersBlobSize;
+    UINT32 Protections;
 };
 
 enum Opcode {
@@ -92,15 +86,19 @@ BOOL RunFilterVM(Operation *Code, PVOID EndPtr = NULL) {
     return VMStack.Pop().ValueOr(FALSE);
 }
 
+struct ProtTable {
+    Vector<ProtectedRegion> Regions;
+};
+
 ProtTable RegionTable;
 UINT64 ConfigLocked = FALSE;
 
 ProtectedRegion *FindRegion(UINT64 Address) {
-    if (RegionTable.Count == 0) {
+    if (RegionTable.NumRegions == 0) {
         return NULL;
     }
 
-    ULONG Min = 0, Max = RegionTable.Count - 1;
+    ULONG Min = 0, Max = RegionTable.NumRegions - 1;
 
     while (Min <= Max) {
         ULONG Mid = (Min + Max) / 2;
@@ -116,6 +114,10 @@ ProtectedRegion *FindRegion(UINT64 Address) {
     }
 
     return NULL;
+}
+
+void InsertRegion(ProtectedRegion Region, ProtTable *Table) {
+    Table->Regions.Push(RegiON);
 }
 
 NTSTATUS DeviceControl(PDEVICE_OBJECT /*DeviceObject*/, PIRP Irp) {
@@ -137,6 +139,7 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT /*DeviceObject*/, PIRP Irp) {
             }
 
             ProtectRequest *Request = (ProtectRequest *)Irp->AssociatedIrp.SystemBuffer;
+
             break;
         case IOCTL_LOCK_CONFIG:
             AtomicStore(&ConfigLocked, TRUE);

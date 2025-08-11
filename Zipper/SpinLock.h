@@ -21,11 +21,11 @@ public:
     }
 
     BOOL TryLock() {
-        return AtomicFetchXchg(&m_Flag, 1, __ATOMIC_ACQUIRE) == 0;
+        return AtomicFetchXchg(&m_Flag, 1, MO_ACQUIRE) == 0;
     }
 
     void Unlock() {
-        AtomicFetchXchg(&m_Flag, 0, __ATOMIC_RELEASE);
+        AtomicFetchXchg(&m_Flag, 0, MO_RELEASE);
     }
 
 private:

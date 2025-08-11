@@ -1,8 +1,6 @@
 #ifndef ZIPPER_RINGBUFFER_H_
 #define ZIPPER_RINGBUFFER_H_
 
-#include <atomic>
-
 #include "Optional.h"
 #include "Intrinsics.h"
 #include "MMUtils.h"
@@ -12,41 +10,41 @@ class MPSCRingBuffer {
 public:
     MPSCRingBuffer(UINT64 Size) : m_Size(Size) {
         m_Buffer = (T *)AllocateVirtual(Size * sizeof(T));
-        m_Committed = (T *)AllocateVirtualAligned(Size * sizeof(std::atomic<UINT64>),
-                _AlignOf(std::atomic<UINT64>));
+        m_Committed = (T *)AllocateVirtualAligned(Size * sizeof(UINT64),
+                _AlignOf(UINT64));
         RtlZeroMemory(m_Buffer, Size * sizeof(T));
-        RtlZeroMemory(m_Committed, Size * sizeof(std::atomic<UINT64>));
+        RtlZeroMemory(m_Committed, Size * sizeof(UINT64));
     }
 
     ~MPSCRingBuffer() {
         FreeVirtual(m_Buffer, Size * sizeof(T));
-        FreeVirtual(m_Committed, Size * sizeof(std::atomic<UINT64>));
+        FreeVirtual(m_Committed, Size * sizeof(UINT64));
     }
 
     BOOL Add(T Item) {
-        UINT64 Tail = m_TailReserved.load(std::memory_order_acquire);
+        UINT64 Tail = AtomicLoad(&m_TailReserved, MO_ACQUIRE);
         do {
-            UINT64 Head = m_Head.load(std::memory_order_acquire);
+            UINT64 Head = AtomicLoad(&m_Head, MO_ACQUIRE);
             if (Tail - Head >= m_Size) {
                 return FALSE;
             }
-        } while (!m_TailReserved.compare_exchange_weak(Tail, Tail + 1,
-                    std::memory_order_acq_rel, std::memory_order_acquire));
+        } while (AtomicCompareExchangeWeak(&m_TailReserved, Tail, Tail + 1,
+                    MO_ACQ_REL, MO_ACQUIRE));
 
         UINT64 Idx = Tail % m_Size;
         m_Buffer[Idx] = Item;
 
-        std::atomic_thread_fence(std::memory_order_release);
+        AtomicFence(MO_RELEASE);
 
-        m_Committed[Idx].fetch_add(1, std::memory_order_acq_rel);
+        AtomicFetchAdd(&m_Committed + Idx, (UINT64)1, MO_ACQ_REL)
         return TRUE;
     }
 
     Optional<T> GetNoWait() {
-        UINT64 Head = m_Head.load(std::memory_order_acquire);
+        UINT64 Head = AtomicLoad(&m_Head, MO_ACQUIRE);
         UINT64 Idx = Head % m_Size;
 
-        UINT64 HeadSeq = m_Committed[Idx].load(std::memory_order_acquire);
+        UINT64 HeadSeq = AtomicLoad(m_Committed + Idx, MO_ACQUIRE);
         UINT64 ExpectedSeq = m_SeqNumber * 2 + 1;
 
         if (HeadSeq != ExpectedSeq) {
@@ -59,8 +57,8 @@ public:
             ++m_SeqNumber;
         }
 
-        m_Committed[Idx].fetch_add(1, std::memory_order_release);
-        m_Head.fetch_add(1, std::memory_order_release);
+        AtomicFetchAdd(m_Committed + Idx, (UINT64)1, MO_RELEASE);
+        AtomicFetchAdd(m_Head, (UINT64)1, MO_RELEASE);
         return Value;
     }
 
@@ -93,10 +91,10 @@ public:
 
 private:
     T *m_Buffer;
-    std::atomic<UINT64> *m_Committed;
-    alignas(64) std::atomic<UINT64> m_SeqNumber{0};
-    alignas(64) std::atomic<UINT64> m_TailReserved{0};
-    alignas(64) std::atomic<UINT64> m_Head{0};
+    UINT64 *m_Committed;
+    alignas(64) UINT64 m_SeqNumber{0};
+    alignas(64) UINT64 m_TailReserved{0};
+    alignas(64) UINT64 m_Head{0};
     UINT64 m_Size;
 };
 
